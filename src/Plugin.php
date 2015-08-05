@@ -16,6 +16,7 @@ use Composer\Plugin\CommandEvent;
 use Composer\Plugin\PluginEvents;
 use Composer\Plugin\PluginInterface;
 use Composer\Repository\ArrayRepository;
+use Composer\Repository\RepositoryInterface;
 use Composer\Repository\RepositoryManager;
 use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
@@ -55,8 +56,9 @@ class Plugin implements PluginInterface
 
         $links = [];
         foreach ($extra['connect-packages'] as $connectPackage => $version) {
-            $releases = $this->getVersionsForPackage($connectPackage);
-            $this->addPackages($releases, $connectPackage, $repositoryManager);
+            $releases   = $this->getVersionsForPackage($connectPackage);
+            $repository = $this->addPackages($releases, $connectPackage);
+            $repositoryManager->addRepository($repository);
 
             $constraint = $versionParser->parseConstraints($version);
             $links[] = new Link($composer->getPackage()->getName(), $connectPackage, $constraint);
@@ -72,13 +74,11 @@ class Plugin implements PluginInterface
     /**
      * @param array $releases
      * @param string $connectPackage
-     * @param RepositoryManager $repositoryManager
+     * @return RepositoryInterface
      */
-    private function addPackages(array $releases, $connectPackage, RepositoryManager $repositoryManager) {
-        $repo = new ArrayRepository;
-
-
-        foreach ($releases as $release) {
+    private function addPackages(array $releases, $connectPackage)
+    {
+        return new ArrayRepository(array_map(function ($release) use ($connectPackage) {
             $distUrl = sprintf($this->distUrlFormat, $connectPackage, $release, $connectPackage, $release);
 
             $package = new Package(strtolower($connectPackage), $release, $release);
@@ -89,11 +89,8 @@ class Plugin implements PluginInterface
                 'package-xml' => "package.xml",
             ]);
 
-
-            $repo->addPackage($package);
-        }
-
-        $repositoryManager->addRepository($repo);
+            return $package;
+        }, $releases));
     }
 
     /**
