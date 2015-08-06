@@ -45,6 +45,24 @@ class Plugin implements PluginInterface
      */
     public function activate(Composer $composer, IOInterface $io)
     {
+        $name = '\nosto_\tagging';
+
+        $newName = '';
+        $arr = str_split($name);
+        while ($elem = array_shift($arr)) {
+            if ($elem === '\\') {
+                $newName .= strtoupper(array_shift($arr));
+            } else {
+                $newName .= $elem;
+            }
+        }
+
+
+
+
+
+
+
         $repositoryManager = $composer->getRepositoryManager();
         $extra             = $composer->getPackage()->getExtra();
 
@@ -97,7 +115,7 @@ class Plugin implements PluginInterface
      * @param string $package
      * @return array
      */
-    public function getVersionsForPackage($package)
+    private function getVersionsForPackage($package)
     {
         $url = sprintf($this->releasesUrlFormat, $package);
         $xml = file_get_contents($url);
@@ -128,5 +146,23 @@ class Plugin implements PluginInterface
             }
         }
         return $releases;
+    }
+
+
+    private function parseFromRequires()
+    {
+
+        //TODO: How to denote an uppercase letter?
+        $name = '\nosto_\tagging';
+        $newName = '';
+        $arr = str_split($name);
+        while ($elem = array_shift($arr)) {
+            if ($elem === '\\') {
+                $newName .= strtoupper(array_shift($arr));
+            } else {
+                $newName .= $elem;
+            }
+        }
+
     }
 }
