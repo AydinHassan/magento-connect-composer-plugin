@@ -2,31 +2,26 @@
 
 namespace AydinHassan\MagentoConnectPlugin;
 
+use Composer\DependencyResolver\Operation\InstallOperation;
 use Composer\EventDispatcher\EventSubscriberInterface;
-use Composer\Installer\InstallerEvents;
+use Composer\Installer;
 use Composer\Composer;
 use Composer\Installer\PackageEvent;
 use Composer\Installer\PackageEvents;
 use Composer\IO\IOInterface;
-use Composer\Installer\InstallerEvent;
 use Composer\Package\Link;
 use Composer\Package\Package;
 use Composer\Package\Version\VersionParser;
-use Composer\Plugin\CommandEvent;
-use Composer\Plugin\PluginEvents;
 use Composer\Plugin\PluginInterface;
 use Composer\Repository\ArrayRepository;
 use Composer\Repository\RepositoryInterface;
-use Composer\Repository\RepositoryManager;
-use Composer\Script\Event;
-use Composer\Script\ScriptEvents;
 
 /**
  * Class Plugin
  * @package AydinHassan\MagentoConnectPlugin
  * @author Aydin Hassan <aydin@hotmail.co.uk>
  */
-class Plugin implements PluginInterface
+class Plugin implements PluginInterface, EventSubscriberInterface
 {
 
     /**
@@ -40,29 +35,60 @@ class Plugin implements PluginInterface
     protected $distUrlFormat = 'http://connect20.magentocommerce.com/community/%s/%s/%s-%s.tgz';
 
     /**
+     * @var string
+     */
+    protected static $packageName = 'aydin-hassan/magento-connect-plugin';
+
+    /**
+     * @return array
+     */
+    public static function getSubscribedEvents()
+    {
+        return [
+            PackageEvents::POST_PACKAGE_INSTALL => [
+                ['postPackageInstall', 0]
+            ],
+        ];
+    }
+
+    /**
+     * @param PackageEvent $event
+     */
+    public function postPackageInstall(PackageEvent $event)
+    {
+        $operation = $event->getOperation();
+        if (!$operation instanceof InstallOperation) {
+            return;
+        }
+
+        $package = $operation->getPackage();
+
+        if ($package->getName() !== static::$packageName) {
+            return;
+        }
+
+        $extra = $event->getComposer()->getPackage()->getExtra();
+        if (!isset($extra['connect-packages']) || !count($extra['connect-packages'])) {
+            return;
+        }
+
+        //skip if we are installing from lock file
+        if ($event->getComposer()->getLocker()->isLocked()) {
+            return;
+        }
+
+        $packages = implode('", "', array_keys($extra['connect-packages']));
+        $message  = '<comment>The package(s): "%s" will be installed the next time you run ';
+        $message .= 'composer update</comment>';
+        $event->getIO()->write(sprintf($message, $packages));
+    }
+
+    /**
      * @param Composer $composer
      * @param IOInterface $io
      */
     public function activate(Composer $composer, IOInterface $io)
     {
-        $name = '\nosto_\tagging';
-
-        $newName = '';
-        $arr = str_split($name);
-        while ($elem = array_shift($arr)) {
-            if ($elem === '\\') {
-                $newName .= strtoupper(array_shift($arr));
-            } else {
-                $newName .= $elem;
-            }
-        }
-
-
-
-
-
-
-
         $repositoryManager = $composer->getRepositoryManager();
         $extra             = $composer->getPackage()->getExtra();
 
@@ -146,23 +172,5 @@ class Plugin implements PluginInterface
             }
         }
         return $releases;
-    }
-
-
-    private function parseFromRequires()
-    {
-
-        //TODO: How to denote an uppercase letter?
-        $name = '\nosto_\tagging';
-        $newName = '';
-        $arr = str_split($name);
-        while ($elem = array_shift($arr)) {
-            if ($elem === '\\') {
-                $newName .= strtoupper(array_shift($arr));
-            } else {
-                $newName .= $elem;
-            }
-        }
-
     }
 }
