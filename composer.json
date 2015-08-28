@@ -1,5 +1,5 @@
 {
-    "name": "aydin-hassan/magento-connect-plugin",
+    "name": "aydin-hassan/magento-connect-composer-plugin",
     "type": "composer-plugin",
     "require": {
         "composer-plugin-api": "^1.0"
