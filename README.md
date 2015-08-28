@@ -19,7 +19,7 @@ composer require aydin-hassan/magento-connect-composer-plugin
 {
     "name": "some-magento-project",
     "require": {
-        "aydin-hassan/magento-connect-composer-plugin" : "~0.1"
+        "aydin-hassan/magento-connect-composer-plugin" : "~1.0"
     },
     "extra": {
         "connect-packages" : {
