@@ -37,7 +37,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     /**
      * @var string
      */
-    protected static $packageName = 'aydin-hassan/magento-connect-plugin';
+    protected static $packageName = 'aydin-hassan/magento-connect-composer-plugin';
 
     /**
      * @return array
