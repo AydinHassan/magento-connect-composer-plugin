@@ -16,6 +16,7 @@ use Composer\Plugin\PluginInterface;
 use Composer\Repository\ArrayRepository;
 use Composer\Repository\RepositoryInterface;
 use InvalidArgumentException;
+use UnexpectedValueException;
 
 /**
  * Class Plugin
@@ -104,10 +105,17 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             try {
                 $releases = $this->getVersionsForPackage($connectPackage);
             } catch (InvalidArgumentException $e) {
-                $message  = 'Could not find release manifest for module with extension key: "%s". ';
-                $message .= 'Did you get the casing right?';
+                $message  = '<error>Could not find release manifest for module with extension key: "%s". ';
+                $message .= 'Did you get the casing right? Error: "%s"</error>';
 
-                $io->writeError(sprintf($message, $connectPackage));
+                $io->writeError(sprintf($message, $connectPackage, $e->getMessage()), true);
+                continue;
+            } catch (UnexpectedValueException $e) {
+                $message  = '<error>Non valid XML return from connect for module with extension key: "%s".</error>';
+                $message .= $e->getMessage();
+
+                $io->writeError(sprintf($message, $connectPackage), true);
+                continue;
             }
             $repository = $this->addPackages($releases, $connectPackage);
             $repositoryManager->addRepository($repository);
@@ -152,17 +160,25 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     private function getVersionsForPackage($package)
     {
         $url = sprintf($this->releasesUrlFormat, $package);
-        $xml = file_get_contents($url);
+        $handle = curl_init($url);
+        curl_setopt($handle,  CURLOPT_RETURNTRANSFER, TRUE);
+        $xml = curl_exec($handle);
+        $httpCode = (int) curl_getinfo($handle, CURLINFO_HTTP_CODE);
+
+        if ($httpCode != 200){
+            throw new InvalidArgumentException(sprintf('URL: "%s" did not return a 200 response', $url));
+        }
 
         if (!$xml) {
-            throw new InvalidArgumentException(sprintf('URL: "%s" returned nothing', $xml));
+            throw new InvalidArgumentException(sprintf('URL: "%s" returned nothing', $url));
         }
 
         libxml_use_internal_errors(true);
         $xmlObj = simplexml_load_string($xml);
         if ($xmlObj=== false) {
             $message = sprintf(
-                "XML Parsing Failed. Errors: '%s'",
+                'XML Parsing Failed. Url: "%s", Errors: "%s"',
+                $url,
                 implode(
                     "', '",
                     array_map(function (\LibXMLError $xmlError) {
@@ -170,7 +186,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                     }, libxml_get_errors())
                 )
             );
-            throw new \UnexpectedValueException($message);
+            throw new UnexpectedValueException($message);
         }
 
         $releases = [];
