@@ -15,6 +15,7 @@ use Composer\Package\Version\VersionParser;
 use Composer\Plugin\PluginInterface;
 use Composer\Repository\ArrayRepository;
 use Composer\Repository\RepositoryInterface;
+use InvalidArgumentException;
 
 /**
  * Class Plugin
@@ -100,7 +101,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
         $links = [];
         foreach ($extra['connect-packages'] as $connectPackage => $version) {
-            $releases   = $this->getVersionsForPackage($connectPackage);
+            try {
+                $releases = $this->getVersionsForPackage($connectPackage);
+            } catch (InvalidArgumentException $e) {
+                $message  = 'Could not find release manifest for module with extension key: "%s". ';
+                $message .= 'Did you get the casing right?';
+
+                $io->writeError(sprintf($message, $connectPackage));
+            }
             $repository = $this->addPackages($releases, $connectPackage);
             $repositoryManager->addRepository($repository);
 
@@ -147,7 +155,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         $xml = file_get_contents($url);
 
         if (!$xml) {
-            throw new \InvalidArgumentException(sprintf('URL: "%s" returned nothing', $xml));
+            throw new InvalidArgumentException(sprintf('URL: "%s" returned nothing', $xml));
         }
 
         libxml_use_internal_errors(true);
