@@ -54,4 +54,4 @@ The first time you install the package, if you already have your extra defined, 
 before composer performs dependency solving. Any events after the package has been installed for the first time are too late. However, a message will be printed in this circumstance
 telling you to run `composer update` again.
 
-This problem is irrelevent if you first install the plugin then define your conenct packages. This issue does not occur when installing from the lock file.
+This problem is irrelevent if you first install the plugin then define your connect packages. This issue does not occur when installing from the lock file.
