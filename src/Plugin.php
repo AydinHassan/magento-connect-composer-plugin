@@ -29,12 +29,12 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     /**
      * @var string
      */
-    protected $releasesUrlFormat = 'http://connect20.magentocommerce.com/community/%s/releases.xml';
+    protected $releasesUrlFormat = 'https://connect20.magentocommerce.com/community/%s/releases.xml';
 
     /**
      * @var string
      */
-    protected $distUrlFormat = 'http://connect20.magentocommerce.com/community/%s/%s/%s-%s.tgz';
+    protected $distUrlFormat = 'https://connect20.magentocommerce.com/community/%s/%s/%s-%s.tgz';
 
     /**
      * @var string
