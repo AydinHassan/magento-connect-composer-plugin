@@ -98,6 +98,12 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             return;
         }
 
+        $composer
+            ->getDownloadManager()
+            ->setDownloader(TarDownloader::ARCHIVE_CODE, new TarDownloader($io, $composer->getConfig()));
+
+
+
         $versionParser = new VersionParser;
 
         $links = [];
