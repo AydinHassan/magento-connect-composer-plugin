@@ -102,8 +102,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             ->getDownloadManager()
             ->setDownloader(TarDownloader::ARCHIVE_CODE, new TarDownloader($io, $composer->getConfig()));
 
-
-
         $versionParser = new VersionParser;
 
         $links = [];
@@ -123,7 +121,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                 $io->writeError(sprintf($message, $connectPackage), true);
                 continue;
             }
-            $repository = $this->addPackages($releases, $connectPackage);
+            $repository = $this->addPackages($releases, $connectPackage, $versionParser);
             $repositoryManager->addRepository($repository);
 
             $constraint = $versionParser->parseConstraints($version);
@@ -140,12 +138,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     /**
      * @param array $releases
      * @param string $connectPackage
+     * @param VersionParser $versionParser
      * @return RepositoryInterface
      */
-    private function addPackages(array $releases, $connectPackage)
+    private function addPackages(array $releases, $connectPackage, VersionParser $versionParser)
     {
-        return new ArrayRepository(array_map(function ($release) use ($connectPackage) {
+        return new ArrayRepository(array_map(function ($release) use ($connectPackage, $versionParser) {
             $distUrl = sprintf($this->distUrlFormat, $connectPackage, $release, $connectPackage, $release);
+            $release = $versionParser->normalize($release);
 
             $package = new Package(strtolower($connectPackage), $release, $release);
             $package->setDistUrl($distUrl);
