@@ -149,16 +149,19 @@ class Plugin implements PluginInterface, EventSubscriberInterface
      */
     private function addPackages(array $releases, $connectPackage, VersionParser $versionParser)
     {
-        return new ArrayRepository(array_map(function ($release) use ($connectPackage, $versionParser) {
-            $distUrl = sprintf($this->distUrlFormat, $connectPackage, $release, $connectPackage, $release);
-
+        $releases = array_filter($releases, function ($release) use ($versionParser) {
             try {
-                $release = $versionParser->normalize($release);
+                $versionParser->normalize($release);
             } catch (UnexpectedValueException $e) {
                 $this->writeVerbose(sprintf('Version "%s" is not valid. Skipping this version.', $release));
-                return;
+                return false;
             }
+            return true;
+        });
 
+        return new ArrayRepository(array_map(function ($release) use ($connectPackage, $versionParser) {
+            $distUrl = sprintf($this->distUrlFormat, $connectPackage, $release, $connectPackage, $release);
+            $release = $versionParser->normalize($release);
             $package = new Package(strtolower($connectPackage), $release, $release);
             $package->setDistUrl($distUrl);
             $package->setDistType('tar');
