@@ -42,6 +42,11 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     protected static $packageName = 'aydin-hassan/magento-connect-composer-plugin';
 
     /**
+     * @var IOInterface
+     */
+    private $io;
+
+    /**
      * @return array
      */
     public static function getSubscribedEvents()
@@ -91,6 +96,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
      */
     public function activate(Composer $composer, IOInterface $io)
     {
+        $this->io          = $io;
         $repositoryManager = $composer->getRepositoryManager();
         $extra             = $composer->getPackage()->getExtra();
 
@@ -112,13 +118,13 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                 $message  = '<error>Could not find release manifest for module with extension key: "%s". ';
                 $message .= 'Did you get the casing right? Error: "%s"</error>';
 
-                $io->writeError(sprintf($message, $connectPackage, $e->getMessage()), true);
+                $this->io->writeError(sprintf($message, $connectPackage, $e->getMessage()), true);
                 continue;
             } catch (UnexpectedValueException $e) {
                 $message  = '<error>Non valid XML return from connect for module with extension key: "%s".</error>';
                 $message .= $e->getMessage();
 
-                $io->writeError(sprintf($message, $connectPackage), true);
+                $this->io->writeError(sprintf($message, $connectPackage), true);
                 continue;
             }
             $repository = $this->addPackages($releases, $connectPackage, $versionParser);
@@ -145,7 +151,13 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     {
         return new ArrayRepository(array_map(function ($release) use ($connectPackage, $versionParser) {
             $distUrl = sprintf($this->distUrlFormat, $connectPackage, $release, $connectPackage, $release);
-            $release = $versionParser->normalize($release);
+
+            try {
+                $release = $versionParser->normalize($release);
+            } catch (UnexpectedValueException $e) {
+                $this->writeVerbose(sprintf('Version "%s" is not valid. Skipping this version.', $release));
+                return;
+            }
 
             $package = new Package(strtolower($connectPackage), $release, $release);
             $package->setDistUrl($distUrl);
@@ -202,5 +214,15 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             }
         }
         return $releases;
+    }
+
+    /**
+     * @param string $message
+     */
+    private function writeVerbose($message)
+    {
+        if ($this->io->isVerbose()) {
+            $this->io->write($message);
+        }
     }
 }
