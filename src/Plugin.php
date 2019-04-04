@@ -131,7 +131,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             $repositoryManager->addRepository($repository);
 
             $constraint = $versionParser->parseConstraints($version);
-            $links[] = new Link($composer->getPackage()->getName(), $connectPackage, $constraint);
+            $links[] = new Link($composer->getPackage()->getName(), $connectPackage, $constraint, 'relates to', $constraint);
         }
 
         if (!empty($links)) {
